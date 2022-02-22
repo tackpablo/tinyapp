@@ -100,6 +100,11 @@ app.post("/urls/login", (req, res) => {
   res.redirect(`/urls`);
 });
 
+app.post("/urls/logout", (req, res) => {
+  res.clearCookie("username");
+  res.redirect(`/urls`);
+});
+
 function generateRandomString() {
   // Math.random = random number between 0-1, toString to change numbers to random string + number, substring returns 6 characters
   const result = Math.random().toString(20).substring(2, 8);
