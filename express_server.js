@@ -1,10 +1,14 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const morgan = require("morgan");
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(morgan("dev"));
 
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
@@ -50,19 +54,19 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// http://localhost:8080/urls post requests updates the urlDatabase and redirects to http://localhost:8080/urls
+// http://localhost:8080/u/:shortURL when you click on the shortURL you get redirected to the longURL
+// app.get("/urls/:shortURL", (req, res) => {
+//   const longURL = urlDatabase[req.params.shortURL];
+//   res.redirect(longURL);
+// });
+
+// http://localhost:8080/urls post requests updates the urlDatabase
 app.post("/urls", (req, res) => {
   // console.log(req.body); // Log the POST request body to the console
   const shortURL = generateRandomString();
   urlDatabase[shortURL] = req.body.longURL;
   // console.log(urlDatabase);
   res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
-});
-
-// http://localhost:8080/u/:shortURL when you click on the shortURL you get redirected to the longURL
-app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
 });
 
 // http://localhost:8080/urls/:shortURL/delete delete button removes short/long URL from list
@@ -78,8 +82,8 @@ app.get("/u/:shortURL/edit", (req, res) => {
   res.redirect(`/urls/${shortURL}`);
 });
 
-app.post("/u/:shortURL/update", (req, res) => {
-  let shortURL = req.params.shortURL;
+app.post("/u/:id", (req, res) => {
+  let shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.update;
   // delete urlDatabase[shortURL];
   // console.log("req.body: ", req.body);
