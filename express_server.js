@@ -15,13 +15,13 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
+
 // http://localhost:8080/ homepage that says Hello!
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
 // localhost:8080/urls.json you get the json version of the urLDatabase
@@ -54,6 +54,12 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// http://localhost:8080/urls/:shortURL/edit to go to edit page for that short/long URL from list
+app.get("/u/:shortURL/edit", (req, res) => {
+  let shortURL = req.params.shortURL;
+  res.redirect(`/urls/${shortURL}`);
+});
+
 // http://localhost:8080/u/:shortURL when you click on the shortURL you get redirected to the longURL
 // app.get("/urls/:shortURL", (req, res) => {
 //   const longURL = urlDatabase[req.params.shortURL];
@@ -74,12 +80,6 @@ app.post("/u/:shortURL/delete", (req, res) => {
   let shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);
-});
-
-// http://localhost:8080/urls/:shortURL/edit to go to edit page for that short/long URL from list
-app.get("/u/:shortURL/edit", (req, res) => {
-  let shortURL = req.params.shortURL;
-  res.redirect(`/urls/${shortURL}`);
 });
 
 app.post("/u/:id", (req, res) => {
