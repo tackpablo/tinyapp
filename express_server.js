@@ -66,15 +66,26 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 // http://localhost:8080/urls/:shortURL/delete delete button removes short/long URL from list
-app.post("/urls/:shortURL/delete", (req, res) => {
+app.post("/u/:shortURL/delete", (req, res) => {
   let shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);
 });
 
-app.get("/u/:shortURL/update", (req, res) => {
+// http://localhost:8080/urls/:shortURL/edit to go to edit page for that short/long URL from list
+app.get("/u/:shortURL/edit", (req, res) => {
   let shortURL = req.params.shortURL;
   res.redirect(`/urls/${shortURL}`);
+});
+
+app.post("/u/:shortURL/update", (req, res) => {
+  let shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body.update;
+  // delete urlDatabase[shortURL];
+  // console.log("req.body: ", req.body);
+  // console.log("req.body.update", req.body.update);
+  // urlDatabase[shortURL] = req.body.update;
+  res.redirect(`/urls/`);
 });
 
 function generateRandomString() {
