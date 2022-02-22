@@ -21,7 +21,7 @@ app.listen(PORT, () => {
 });
 
 // localhost:8080/urls.json you get the json version of the urLDatabase
-http: app.get("/urls.json", (req, res) => {
+app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
@@ -70,6 +70,11 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   let shortURL = req.params.shortURL;
   delete urlDatabase[shortURL];
   res.redirect(`/urls`);
+});
+
+app.get("/u/:shortURL/update", (req, res) => {
+  let shortURL = req.params.shortURL;
+  res.redirect(`/urls/${shortURL}`);
 });
 
 function generateRandomString() {
