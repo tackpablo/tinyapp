@@ -39,21 +39,26 @@ app.get("/urls/new", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: req.params.longURL,
+    longURL: urlDatabase[req.params.shortURL],
   };
   res.render("urls_show", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   // console.log(req.body); // Log the POST request body to the console
-  let shortUrlRandom = generateRandomString();
-  urlDatabase[shortUrlRandom] = req.body.longURL;
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
   // console.log(urlDatabase);
-  res.redirect(`/urls/${shortUrlRandom}`); // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
 });
 
 function generateRandomString() {
-  // Math.random = random number between 0-1, toString represents base 36 (represents digis beyond 9 by letters), substring returns 6 characters
-  const result = Math.random().toString(36).substring(2, 8);
+  // Math.random = random number between 0-1, toString to change numbers to random string + number, substring returns 6 characters
+  const result = Math.random().toString(20).substring(2, 8);
   return result;
 }
