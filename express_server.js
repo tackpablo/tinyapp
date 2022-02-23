@@ -58,6 +58,7 @@ app.get("/urls", (req, res) => {
       ? users[req.cookies["user_id"]].email
       : null,
   };
+
   // variables like above usually sent in when rendering
   res.render("urls_index", templateVars);
 });
@@ -72,6 +73,12 @@ app.get("/urls/new", (req, res) => {
       ? users[req.cookies["user_id"]].email
       : null,
   };
+
+  // if there is no cookie, and trying to access
+  if (!req.cookies["user_id"]) {
+    res.status(401).send("You need to log in to do that!");
+  }
+
   res.render("urls_new", templateVars);
 });
 
@@ -128,12 +135,18 @@ app.get("/u/:shortURL/edit", (req, res) => {
 
 // post requests updates the urlDatabase
 app.post("/urls", (req, res) => {
+  // if there is no cookie, and trying to access
+  if (!req.cookies["user_id"]) {
+    res.status(401).send("You need to log in to do that!");
+    return;
+  }
   // console.log(req.body); // Log the POST request body to the console
   // generate random 6 digit short URL
   const shortURL = generateRandomString();
   // give databse key a value
   urlDatabase[shortURL] = req.body.longURL;
   // console.log(urlDatabase);
+
   res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
 });
 
@@ -182,17 +195,15 @@ app.post("/register", (req, res) => {
   // if email or password are empty strings
   if (email === "" || password === "") {
     // send them 400 status code
-    res.send(
-      "400 Status Code! Cannot register with empty email/password fields!"
-    );
+    res.status(400).send("Cannot register with empty email/password fields!");
   }
 
   // if email doesn't exist in user's database
   if (emailChecker(email, users)) {
     // send them 400 status code
-    res.send(
-      "400 Status Code! That email is already registered! Please use a different email!"
-    );
+    res
+      .status(400)
+      .send("That email is already registered! Please use a different email!");
   }
 
   // add register data to user object
@@ -215,16 +226,22 @@ app.post("/login", (req, res) => {
   console.log(email);
   let password = req.body.password;
 
+  // if email or password are empty strings
+  if (email === "" || password === "") {
+    // send them 400 status code
+    res.status(400).send("Cannot register with empty email/password fields!");
+  }
+
   // if email exist in user's database
   if (!emailChecker(email, users)) {
     // send them 403 status code
-    res.send("403 Status Code! That email is not registered!");
+    res.status(403).send("That email is not registered!");
   }
 
   // if passsword exist in user's database
   if (!passwordChecker(password, users)) {
     // send them 403 status code
-    res.send("403 Status Code! Wrong password!");
+    res.status(403).send("Wrong password!");
   }
 
   // let user id be retrieved
