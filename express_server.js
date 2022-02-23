@@ -50,7 +50,14 @@ app.get("/hello", (req, res) => {
 // renders urls_index (main page) with short/long URL list
 app.get("/urls", (req, res) => {
   // because this page uses urls from the database and username when rendering, need to pass them in as templateVars
-  const templateVars = { urls: urlDatabase, username: req.cookies.username };
+  const templateVars = {
+    // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
+    urls: urlDatabase,
+    user_id: req.cookies["user_id"],
+    email: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]].email
+      : null,
+  };
   // variables like above usually sent in when rendering
   res.render("urls_index", templateVars);
 });
@@ -58,27 +65,39 @@ app.get("/urls", (req, res) => {
 // renders urls_new (new url form page) to enter URL t osave
 app.get("/urls/new", (req, res) => {
   // because this page uses username when rendering, need to pass them in as templateVars
-  const templateVars = { username: req.cookies.username };
+  // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
+  const templateVars = {
+    user_id: req.cookies["user_id"],
+    email: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]].email
+      : null,
+  };
   res.render("urls_new", templateVars);
 });
 
 // renders urls_show (page showing details of urls) and shows the short/long URL
 app.get("/urls/:shortURL", (req, res) => {
   // because this page uses the short/long URLs and username when rendering, need to pass them in as templateVars
+  // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies.username,
+    user_id: req.cookies["user_id"],
+    email: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]].email
+      : null,
   };
   res.render("urls_show", templateVars);
 });
 
 // renders urls_register (page showing registration)
 app.get("/register", (req, res) => {
+  // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    username: req.cookies.username,
+    user_id: null,
+    email: null,
   };
   res.render("urls_register", templateVars);
 });
@@ -122,34 +141,33 @@ app.post("/u/:id", (req, res) => {
 
 // login - takes username from request body, sends it as request to make cookie, redirects to main page
 app.post("/urls/login", (req, res) => {
-  // save username (from input name) from request body
-  const username = req.body.username;
+  // const username = req.body.username;
   // sends response as cookie for username - "name", value
-  res.cookie("username", username);
+  // res.cookie("username", username);
   res.redirect(`/urls`);
 });
 
 // logout - sends response for clearing cookie and redirects to main page
 app.post("/urls/logout", (req, res) => {
   // sends response to clear cookie
-  res.clearCookie("username");
-  res.redirect(`/urls`);
+  res.clearCookie("user_id");
+  res.redirect(`/register`);
 });
 
 // register data from register form
 app.post("/register", (req, res) => {
-  let id = req.body.id;
   let email = req.body.email;
   let password = req.body.password;
   const userId = generateRandomString();
   // add register data to user object
   users[userId] = {
-    id: id,
+    user_id: userId,
     email: email,
     password: password,
   };
-  res.cookie("user_id", id);
-  // console.log(users);
+  // save cookie user_id as key and random string as value
+  res.cookie("user_id", userId);
+  console.log(users);
   res.redirect(`/urls`);
 });
 
