@@ -106,6 +106,22 @@ app.get("/register", (req, res) => {
   res.render("urls_register", templateVars);
 });
 
+// renders urls_login (page showing login)
+app.get("/login", (req, res) => {
+  // for register page, you want userid and email to be null as nothing should be registered
+  const templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL],
+    user_id: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]]
+      : null,
+    email: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]].email
+      : null,
+  };
+  res.render("urls_login", templateVars);
+});
+
 // goes to edit page for the specified short/long URL from list via button
 app.get("/u/:shortURL/edit", (req, res) => {
   let shortURL = req.params.shortURL;
