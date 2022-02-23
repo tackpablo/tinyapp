@@ -92,12 +92,16 @@ app.get("/urls/:shortURL", (req, res) => {
 
 // renders urls_register (page showing registration)
 app.get("/register", (req, res) => {
-  // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
+  // for register page, you want userid and email to be null as nothing should be registered
   const templateVars = {
     shortURL: req.params.shortURL,
     longURL: urlDatabase[req.params.shortURL],
-    user_id: null,
-    email: null,
+    user_id: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]]
+      : null,
+    email: users[req.cookies["user_id"]]
+      ? users[req.cookies["user_id"]].email
+      : null,
   };
   res.render("urls_register", templateVars);
 });
@@ -159,6 +163,19 @@ app.post("/register", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   const userId = generateRandomString();
+
+  if (email === "" || password === "") {
+    res.send(
+      "400 Status Code! Cannot register with empty email/password fields!"
+    );
+  }
+
+  if (emailChecker(email, users)) {
+    res.send(
+      "400 Status Code! That email is already registered! Please use a different email!"
+    );
+  }
+
   // add register data to user object
   users[userId] = {
     user_id: userId,
@@ -168,8 +185,11 @@ app.post("/register", (req, res) => {
   // save cookie user_id as key and random string as value
   res.cookie("user_id", userId);
   console.log(users);
+  // console.log(users);
   res.redirect(`/urls`);
 });
+
+//HELPER FUNCTIONS
 
 // function to generate random 6 digit string
 function generateRandomString() {
@@ -177,3 +197,15 @@ function generateRandomString() {
   const result = Math.random().toString(20).substring(2, 8);
   return result;
 }
+
+// function to check if a given email already exists
+const emailChecker = function (email, users) {
+  // loop through users in user object
+  for (const user in users) {
+    // if user's email === email
+    if (users[user].email === email) {
+      return true;
+    }
+  }
+  return false;
+};
