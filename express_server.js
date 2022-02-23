@@ -60,6 +60,16 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+// renders urls_register (page showing registration)
+app.get("/register", (req, res) => {
+  const templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL],
+    username: req.cookies.username,
+  };
+  res.render("urls_register", templateVars);
+});
+
 // goes to edit page for the specified short/long URL from list via button
 app.get("/u/:shortURL/edit", (req, res) => {
   let shortURL = req.params.shortURL;
@@ -110,6 +120,14 @@ app.post("/urls/login", (req, res) => {
 app.post("/urls/logout", (req, res) => {
   // sends response to clear cookie
   res.clearCookie("username");
+  res.redirect(`/urls`);
+});
+
+// register data from register form
+app.post("/register", (req, res) => {
+  let name = req.body.name;
+  let email = req.body.email;
+  let password = req.body.password;
   res.redirect(`/urls`);
 });
 
