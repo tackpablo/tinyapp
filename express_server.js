@@ -110,8 +110,6 @@ app.get("/register", (req, res) => {
 app.get("/login", (req, res) => {
   // for register page, you want userid and email to be null as nothing should be registered
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
     user_id: users[req.cookies["user_id"]]
       ? users[req.cookies["user_id"]]
       : null,
@@ -179,14 +177,19 @@ app.post("/register", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   const userId = generateRandomString();
+  console.log(users);
 
+  // if email or password are empty strings
   if (email === "" || password === "") {
+    // send them 400 status code
     res.send(
       "400 Status Code! Cannot register with empty email/password fields!"
     );
   }
 
+  // if email doesn't exist in user's database
   if (emailChecker(email, users)) {
+    // send them 400 status code
     res.send(
       "400 Status Code! That email is already registered! Please use a different email!"
     );
@@ -200,9 +203,37 @@ app.post("/register", (req, res) => {
   };
   // save cookie user_id as key and random string as value
   res.cookie("user_id", userId);
-  console.log(users);
+
   // console.log(users);
   res.redirect(`/urls`);
+});
+
+// for login
+app.post("/login", (req, res) => {
+  console.log(users);
+  let email = req.body.email;
+  console.log(email);
+  let password = req.body.password;
+
+  // if email exist in user's database
+  if (!emailChecker(email, users)) {
+    // send them 403 status code
+    res.send("403 Status Code! That email is not registered!");
+  }
+
+  // if passsword exist in user's database
+  if (!passwordChecker(password, users)) {
+    // send them 403 status code
+    res.send("403 Status Code! Wrong password!");
+  }
+
+  // let user id be retrieved
+  let userId = idFromEmail(email, users);
+  console.log(userId);
+  // set the user_id cookie with user's id and redirect
+  res.cookie("user_id", userId);
+
+  res.redirect(`/urls/`);
 });
 
 //HELPER FUNCTIONS
@@ -216,12 +247,36 @@ function generateRandomString() {
 
 // function to check if a given email already exists
 const emailChecker = function (email, users) {
-  // loop through users in user object
+  // loop through users in dtabse
   for (const user in users) {
-    // if user's email === email
+    // if email exists in database
     if (users[user].email === email) {
       return true;
     }
   }
   return false;
+};
+
+// function to check if a given password already exists
+const passwordChecker = function (password, users) {
+  // loop through users in user object
+  for (const user in users) {
+    // if user's email === email
+    if (users[user].password === password) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// function to retrieve id from email
+const idFromEmail = function (email, users) {
+  // loop through users in user object
+  for (const user in users) {
+    // if user's email === email
+    if (users[user].email === email) {
+      // return that user's password
+      return users[user].user_id;
+    }
+  }
 };
