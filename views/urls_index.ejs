@@ -28,8 +28,8 @@
       <tbody>
         <% for(let url in urls) { %>
           <tr>
-            <td><%= url %>  </td>
-            <td><%= urls[url] %></td> 
+            <td><%= url %></td>
+            <td><%= urls[url].longURL %></td> 
 
             <td><form method="POST" action="/u/<%= url %>/delete">
               <button type="submit" class="btn btn-outline-danger">Delete</button></td>

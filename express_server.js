@@ -11,8 +11,14 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
 };
 
 const users = {
@@ -63,7 +69,7 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
-// renders urls_new (new url form page) to enter URL t osave
+// renders urls_new (new url form page) to enter URL to save
 app.get("/urls/new", (req, res) => {
   // because this page uses username when rendering, need to pass them in as templateVars
   // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
@@ -88,21 +94,36 @@ app.get("/urls/:shortURL", (req, res) => {
   // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
   const templateVars = {
     shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
+    longURL: urlDatabase[req.params.shortURL].longURL,
     user_id: req.cookies["user_id"],
     email: users[req.cookies["user_id"]]
       ? users[req.cookies["user_id"]].email
       : null,
   };
+
   res.render("urls_show", templateVars);
+});
+
+// request to server to see if short URL exists to redirect to long URL
+app.get("/u/:id", (req, res) => {
+  // define short URL from :id and shortURLData to see if there is an object for that particular short URL
+  const shortURL = req.params.id;
+  const shortURLData = urlDatabase[shortURL];
+
+  // if there is no data (no longURL), send status error
+  if (!shortURLData) {
+    res.status(404).send("That URL is not in the database");
+  } else {
+    // otherwise define long URL and redirect to it
+    const longURL = urlDatabase[shortURL].longURL;
+    res.redirect(longURL);
+  }
 });
 
 // renders urls_register (page showing registration)
 app.get("/register", (req, res) => {
-  // for register page, you want userid and email to be null as nothing should be registered
+  // for register page, you want user id and email to be null as nothing should be registered
   const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL],
     user_id: users[req.cookies["user_id"]]
       ? users[req.cookies["user_id"]]
       : null,
@@ -143,8 +164,11 @@ app.post("/urls", (req, res) => {
   // console.log(req.body); // Log the POST request body to the console
   // generate random 6 digit short URL
   const shortURL = generateRandomString();
-  // give databse key a value
-  urlDatabase[shortURL] = req.body.longURL;
+  // give database key a value
+  urlDatabase[shortURL] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"],
+  };
   // console.log(urlDatabase);
 
   res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
