@@ -55,10 +55,13 @@ app.get("/hello", (req, res) => {
 
 // renders urls_index (main page) with short/long URL list
 app.get("/urls", (req, res) => {
+  // filtered URLs for specific user (ones they "own")
+  const filteredURLs = urlsForUser(req.cookies["user_id"], urlDatabase);
+  console.log(filteredURLs);
   // because this page uses urls from the database and username when rendering, need to pass them in as templateVars
   const templateVars = {
     // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
-    urls: urlDatabase,
+    urls: filteredURLs,
     user_id: req.cookies["user_id"],
     email: users[req.cookies["user_id"]]
       ? users[req.cookies["user_id"]].email
@@ -82,10 +85,10 @@ app.get("/urls/new", (req, res) => {
 
   // if there is no cookie, and trying to access
   if (!req.cookies["user_id"]) {
-    res.status(401).send("You need to log in to do that!");
+    return res.status(401).send("You need to log in to do that!");
   }
 
-  res.render("urls_new", templateVars);
+  return res.render("urls_new", templateVars);
 });
 
 // renders urls_show (page showing details of urls) and shows the short/long URL
@@ -101,7 +104,7 @@ app.get("/urls/:shortURL", (req, res) => {
       : null,
   };
 
-  res.render("urls_show", templateVars);
+  return res.render("urls_show", templateVars);
 });
 
 // request to server to see if short URL exists to redirect to long URL
@@ -112,11 +115,11 @@ app.get("/u/:id", (req, res) => {
 
   // if there is no data (no longURL), send status error
   if (!shortURLData) {
-    res.status(404).send("That URL is not in the database");
+    return res.status(404).send("That URL is not in the database");
   } else {
     // otherwise define long URL and redirect to it
     const longURL = urlDatabase[shortURL].longURL;
-    res.redirect(longURL);
+    return res.redirect(longURL);
   }
 });
 
@@ -131,7 +134,7 @@ app.get("/register", (req, res) => {
       ? users[req.cookies["user_id"]].email
       : null,
   };
-  res.render("urls_register", templateVars);
+  return res.render("urls_register", templateVars);
 });
 
 // renders urls_login (page showing login)
@@ -145,13 +148,13 @@ app.get("/login", (req, res) => {
       ? users[req.cookies["user_id"]].email
       : null,
   };
-  res.render("urls_login", templateVars);
+  return res.render("urls_login", templateVars);
 });
 
 // goes to edit page for the specified short/long URL from list via button
 app.get("/u/:shortURL/edit", (req, res) => {
   let shortURL = req.params.shortURL;
-  res.redirect(`/urls/${shortURL}`);
+  return res.redirect(`/urls/${shortURL}`);
 });
 
 // post requests updates the urlDatabase
@@ -171,7 +174,7 @@ app.post("/urls", (req, res) => {
   };
   // console.log(urlDatabase);
 
-  res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
+  return res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
 });
 
 // delete button removes short/long URL from list
@@ -179,7 +182,7 @@ app.post("/u/:shortURL/delete", (req, res) => {
   let shortURL = req.params.shortURL;
   // deletes key and value from knowing the key
   delete urlDatabase[shortURL];
-  res.redirect(`/urls`);
+  return res.redirect(`/urls`);
 });
 
 // for editing longURL, saves the shortURL and uses that as key to update longURL, redirects to main page
@@ -191,7 +194,7 @@ app.post("/u/:id", (req, res) => {
   // console.log("req.body: ", req.body);
   // console.log("req.body.update", req.body.update);
   // urlDatabase[shortURL] = req.body.update;
-  res.redirect(`/urls/`);
+  return res.redirect(`/urls/`);
 });
 
 // login - takes username from request body, sends it as request to make cookie, redirects to main page
@@ -199,14 +202,14 @@ app.post("/urls/login", (req, res) => {
   // const username = req.body.username;
   // sends response as cookie for username - "name", value
   // res.cookie("username", username);
-  res.redirect(`/urls`);
+  return res.redirect(`/urls`);
 });
 
 // logout - sends response for clearing cookie and redirects to main page
 app.post("/urls/logout", (req, res) => {
   // sends response to clear cookie
   res.clearCookie("user_id");
-  res.redirect(`/register`);
+  return res.redirect(`/register`);
 });
 
 // register data from register form
@@ -219,13 +222,15 @@ app.post("/register", (req, res) => {
   // if email or password are empty strings
   if (email === "" || password === "") {
     // send them 400 status code
-    res.status(400).send("Cannot register with empty email/password fields!");
+    return res
+      .status(400)
+      .send("Cannot register with empty email/password fields!");
   }
 
   // if email doesn't exist in user's database
   if (emailChecker(email, users)) {
     // send them 400 status code
-    res
+    return res
       .status(400)
       .send("That email is already registered! Please use a different email!");
   }
@@ -240,7 +245,7 @@ app.post("/register", (req, res) => {
   res.cookie("user_id", userId);
 
   // console.log(users);
-  res.redirect(`/urls`);
+  return res.redirect(`/urls`);
 });
 
 // for login
@@ -253,19 +258,21 @@ app.post("/login", (req, res) => {
   // if email or password are empty strings
   if (email === "" || password === "") {
     // send them 400 status code
-    res.status(400).send("Cannot register with empty email/password fields!");
+    return res
+      .status(400)
+      .send("Cannot register with empty email/password fields!");
   }
 
   // if email exist in user's database
   if (!emailChecker(email, users)) {
     // send them 403 status code
-    res.status(403).send("That email is not registered!");
+    return res.status(403).send("That email is not registered!");
   }
 
   // if passsword exist in user's database
   if (!passwordChecker(password, users)) {
     // send them 403 status code
-    res.status(403).send("Wrong password!");
+    return res.status(403).send("Wrong password!");
   }
 
   // let user id be retrieved
@@ -274,7 +281,7 @@ app.post("/login", (req, res) => {
   // set the user_id cookie with user's id and redirect
   res.cookie("user_id", userId);
 
-  res.redirect(`/urls/`);
+  return res.redirect(`/urls/`);
 });
 
 //HELPER FUNCTIONS
@@ -320,4 +327,18 @@ const idFromEmail = function (email, users) {
       return users[user].user_id;
     }
   }
+};
+
+// function to get short URLs for specific user
+const urlsForUser = function (id, urlDatabase) {
+  const userURLs = {};
+  // loop through URL database
+  for (const shortURL in urlDatabase) {
+    // if database user ID equals specific user
+    if (urlDatabase[shortURL].userID === id) {
+      // let key be the short URL and value be shortURL object data
+      userURLs[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURLs;
 };
