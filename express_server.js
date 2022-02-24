@@ -278,9 +278,9 @@ app.post("/register", (req, res) => {
 
 // for login
 app.post("/login", (req, res) => {
-  console.log(users);
+  // console.log(users);
   let email = req.body.email;
-  console.log(email);
+  // console.log(email);
   let password = req.body.password;
 
   // if email or password are empty strings
