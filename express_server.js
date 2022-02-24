@@ -93,6 +93,23 @@ app.get("/urls/new", (req, res) => {
 
 // renders urls_show (page showing details of urls) and shows the short/long URL
 app.get("/urls/:shortURL", (req, res) => {
+  // if not logged in, send error
+  if (!req.cookies["user_id"]) {
+    res.status(401).send("You need to log in to do that!");
+    return;
+  }
+
+  const shortURL = req.params.shortURL;
+  const filteredURLs = urlsForUser(req.cookies["user_id"], urlDatabase);
+
+  // if the short URL for the user (taken from :id) does not exist send error
+  if (!filteredURLs[shortURL]) {
+    res.status(401).send("The URL does not exist.");
+    return;
+  }
+
+  // if user is logged in and the short url (:shortURL) is the user's, can pass the data in correctly
+
   // because this page uses the short/long URLs and username when rendering, need to pass them in as templateVars
   // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
   const templateVars = {
@@ -151,10 +168,26 @@ app.get("/login", (req, res) => {
   return res.render("urls_login", templateVars);
 });
 
-// goes to edit page for the specified short/long URL from list via button
-app.get("/u/:shortURL/edit", (req, res) => {
-  let shortURL = req.params.shortURL;
-  return res.redirect(`/urls/${shortURL}`);
+// delete button removes short/long URL from list
+app.post("/urls/:shortURL/delete", (req, res) => {
+  // if not logged in, send error
+  if (!req.cookies["user_id"]) {
+    res.status(401).send("You need to log in to do that!");
+    return;
+  }
+
+  const shortURL = req.params.shortURL;
+  const filteredURLs = urlsForUser(req.cookies["user_id"], urlDatabase);
+
+  // if the short URL for the user (taken from :id) does not exist send error
+  if (!filteredURLs[shortURL]) {
+    res.status(401).send("The URL does not exist.");
+    return;
+  }
+
+  // if user is logged in and the short url (:shortURL) is the user's. deletes key and value from knowing the key
+  delete urlDatabase[shortURL];
+  return res.redirect(`/urls`);
 });
 
 // post requests updates the urlDatabase
@@ -177,36 +210,31 @@ app.post("/urls", (req, res) => {
   return res.redirect(`/urls/${shortURL}`); // Respond with 'Ok' (we will replace this)
 });
 
-// delete button removes short/long URL from list
-app.post("/u/:shortURL/delete", (req, res) => {
-  let shortURL = req.params.shortURL;
-  // deletes key and value from knowing the key
-  delete urlDatabase[shortURL];
-  return res.redirect(`/urls`);
-});
-
 // for editing longURL, saves the shortURL and uses that as key to update longURL, redirects to main page
-app.post("/u/:id", (req, res) => {
-  let shortURL = req.params.id;
-  // takes the value from update (name on input) to update longURL data
-  urlDatabase[shortURL] = req.body.update;
-  // delete urlDatabase[shortURL];
-  // console.log("req.body: ", req.body);
-  // console.log("req.body.update", req.body.update);
-  // urlDatabase[shortURL] = req.body.update;
+app.post("/urls/:id", (req, res) => {
+  // if not logged in, send error
+  if (!req.cookies["user_id"]) {
+    res.status(401).send("You need to log in to do that!");
+    return;
+  }
+
+  const shortURL = req.params.id;
+  const filteredURLs = urlsForUser(req.cookies["user_id"], urlDatabase);
+
+  // if the short URL for the user (taken from :id) does not exist send error
+  if (!filteredURLs[shortURL]) {
+    res.status(401).send("The URL does not exist.");
+    return;
+  }
+
+  // if user is logged in and the short URL (:id) is the user's, allow to update
+  urlDatabase[shortURL].longURL = req.body.update;
+
   return res.redirect(`/urls/`);
 });
 
-// login - takes username from request body, sends it as request to make cookie, redirects to main page
-app.post("/urls/login", (req, res) => {
-  // const username = req.body.username;
-  // sends response as cookie for username - "name", value
-  // res.cookie("username", username);
-  return res.redirect(`/urls`);
-});
-
 // logout - sends response for clearing cookie and redirects to main page
-app.post("/urls/logout", (req, res) => {
+app.post("/logout", (req, res) => {
   // sends response to clear cookie
   res.clearCookie("user_id");
   return res.redirect(`/register`);

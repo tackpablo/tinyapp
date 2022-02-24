@@ -22,12 +22,12 @@
         <% } %> <% if (!user_id) { %>
         <a class="nav-item nav-link" href="/login">Login</a>
         <a class="nav-item nav-link" href="/register">Register</a>
-        <% } else { %>
+        <% } %>
       </div>
     </div>
     <% if (user_id) { %>
     <h4>Logged in as: <%= email %></h4>
-    <form method="POST" action="/urls/logout">
+    <form method="POST" action="/logout">
       <button
         type="submit"
         class="btn btn-danger"
@@ -36,23 +36,6 @@
         Logout
       </button>
     </form>
-    <% } else { %>
-    <form method="POST" action="/urls/login">
-      <label for="username">Login:</label>
-      <input
-        type="text"
-        name="username"
-        placeholder="username"
-        style="border-radius: 10px"
-      />
-      <button
-        type="submit"
-        class="btn btn-dark"
-        style="margin-left: 1em; margin-right: 5em"
-      >
-        Login
-      </button>
-    </form>
-    <% } %> <% } %>
+    <% } %>
   </nav>
 </header>
