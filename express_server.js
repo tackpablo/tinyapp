@@ -4,6 +4,7 @@ const PORT = 8080;
 const morgan = require("morgan");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -11,27 +12,27 @@ app.use(cookieParser());
 app.use(morgan("dev"));
 
 const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
+  // b6UTxQ: {
+  //   longURL: "https://www.tsn.ca",
+  //   userID: "aJ48lW",
+  // },
+  // i3BoGr: {
+  //   longURL: "https://www.google.ca",
+  //   userID: "aJ48lW",
+  // },
 };
 
 const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
+  // userRandomID: {
+  //   id: "userRandomID",
+  //   email: "user@example.com",
+  //   password: "purple-monkey-dinosaur",
+  // },
+  // user2RandomID: {
+  //   id: "user2RandomID",
+  //   email: "user2@example.com",
+  //   password: "dishwasher-funk",
+  // },
 };
 
 app.listen(PORT, () => {
@@ -107,8 +108,6 @@ app.get("/urls/:shortURL", (req, res) => {
     res.status(401).send("The URL does not exist.");
     return;
   }
-
-  // if user is logged in and the short url (:shortURL) is the user's, can pass the data in correctly
 
   // because this page uses the short/long URLs and username when rendering, need to pass them in as templateVars
   // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
@@ -237,18 +236,20 @@ app.post("/urls/:id", (req, res) => {
 app.post("/logout", (req, res) => {
   // sends response to clear cookie
   res.clearCookie("user_id");
-  return res.redirect(`/register`);
+  return res.redirect(`/login`);
 });
 
 // register data from register form
 app.post("/register", (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
+  // save hashed password into variable
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const userId = generateRandomString();
   console.log(users);
 
-  // if email or password are empty strings
-  if (email === "" || password === "") {
+  // if email or hashedpassword are empty strings
+  if (email === "" || hashedPassword === "") {
     // send them 400 status code
     return res
       .status(400)
@@ -263,11 +264,11 @@ app.post("/register", (req, res) => {
       .send("That email is already registered! Please use a different email!");
   }
 
-  // add register data to user object
+  // add register data to user object (with hashedpassword as password)
   users[userId] = {
     user_id: userId,
     email: email,
-    password: password,
+    password: hashedPassword,
   };
   // save cookie user_id as key and random string as value
   res.cookie("user_id", userId);
@@ -282,9 +283,11 @@ app.post("/login", (req, res) => {
   let email = req.body.email;
   // console.log(email);
   let password = req.body.password;
+  // save hashed password into variable
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
-  // if email or password are empty strings
-  if (email === "" || password === "") {
+  // if email or hashedpassword are empty strings
+  if (email === "" || hashedPassword === "") {
     // send them 400 status code
     return res
       .status(400)
@@ -297,11 +300,13 @@ app.post("/login", (req, res) => {
     return res.status(403).send("That email is not registered!");
   }
 
-  // if passsword exist in user's database
-  if (!passwordChecker(password, users)) {
-    // send them 403 status code
-    return res.status(403).send("Wrong password!");
-  }
+  // // if passsword doest match in user's database
+  // if (!passwordChecker(hashedPassword, users)) {
+  //   // send them 403 status code
+  //   return res.status(403).send("Wrong password!");
+  // }
+  // passwordchecker not required as need to check hashed password to normal password using bcrypt, which returns boolean
+  bcrypt.compareSync(password, hashedPassword);
 
   // let user id be retrieved
   let userId = idFromEmail(email, users);
