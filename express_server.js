@@ -6,15 +6,23 @@ const bodyParser = require("body-parser");
 const bcrypt = require("bcryptjs");
 // const cookieParser = require("cookie-parser"); // will be obsolete due to cookieSession
 const cookieSession = require("cookie-session");
+const {
+  generateRandomString,
+  emailChecker,
+  urlsForUser,
+  getUserByEmail,
+  getUserObject,
+} = require("./helpers");
 
 app.set("view engine", "ejs");
+
 app.use(bodyParser.urlencoded({ extended: true }));
 // app.use(cookieParser()); // will be obsolete due to cookieSession
 app.use(morgan("dev"));
 app.use(
   cookieSession({
     name: "session",
-    keys: ["encrypt", "decrypt"],
+    keys: ["session1", "session1", "session1"],
   })
 );
 
@@ -42,11 +50,11 @@ const urlDatabase = {
 };
 
 const users = {
-  // userRandomID: {
-  //   id: "userRandomID",
-  //   email: "user@example.com",
-  //   password: "purple-monkey-dinosaur",
-  // },
+  userRandomID: {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur",
+  },
   // user2RandomID: {
   //   id: "user2RandomID",
   //   email: "user2@example.com",
@@ -60,24 +68,24 @@ app.listen(PORT, () => {
 
 // page that says Hello!
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  return res.redirect(`/urls`);
 });
 
-// you get the json version of the urLDatabase
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
+// // you get the json version of the urLDatabase
+// app.get("/urls.json", (req, res) => {
+//   res.json(urlDatabase);
+// });
 
-// you get Hello World
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
+// // you get Hello World
+// app.get("/hello", (req, res) => {
+//   res.send("<html><body>Hello <b>World</b></body></html>\n");
+// });
 
 // renders urls_index (main page) with short/long URL list
 app.get("/urls", (req, res) => {
   // filtered URLs for specific user (ones they "own")
   const filteredURLs = urlsForUser(req.session.user_id, urlDatabase);
-  console.log(filteredURLs);
+  // console.log(filteredURLs);
   // because this page uses urls from the database and username when rendering, need to pass them in as templateVars
   const templateVars = {
     // set object where user_id is the value of the cookie and email is a ternary operator where if user exists, give email or null if no cookie
@@ -101,7 +109,7 @@ app.get("/urls/new", (req, res) => {
 
   // if there is no cookie, and trying to access
   if (!req.session.user_id) {
-    return res.status(401).send("You need to log in to do that!");
+    return res.redirect(`/login`);
   }
 
   return res.render("urls_new", templateVars);
@@ -154,6 +162,11 @@ app.get("/u/:id", (req, res) => {
 
 // renders urls_register (page showing registration)
 app.get("/register", (req, res) => {
+  // if logged in, redirect to home
+  if (req.session.user_id) {
+    return res.redirect(`/urls`);
+  }
+
   // for register page, you want user id and email to be null as nothing should be registered
   const templateVars = {
     user_id: users[req.session.user_id] ? users[req.session.user_id] : null,
@@ -242,7 +255,8 @@ app.post("/urls/:id", (req, res) => {
 app.post("/logout", (req, res) => {
   // sends response to clear cookie
   req.session = null;
-  return res.redirect(`/login`);
+  // console.log(req.session);
+  return res.redirect(`/urls`);
 });
 
 // register data from register form
@@ -252,10 +266,10 @@ app.post("/register", (req, res) => {
   // save hashed password into variable
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userId = generateRandomString();
-  console.log(users);
+  // console.log(users);
 
   // if email or hashedpassword are empty strings
-  if (email === "" || hashedPassword === "") {
+  if (email === "" || password === "") {
     // send them 400 status code
     return res
       .status(400)
@@ -272,10 +286,11 @@ app.post("/register", (req, res) => {
 
   // add register data to user object (with hashedpassword as password)
   users[userId] = {
-    user_id: userId,
+    id: userId,
     email: email,
     password: hashedPassword,
   };
+  // console.log("register: ", users);
   // save cookie user_id as key and random string as value
   req.session.user_id = userId;
 
@@ -285,15 +300,15 @@ app.post("/register", (req, res) => {
 
 // for login
 app.post("/login", (req, res) => {
-  // console.log(users);
+  // console.log("login: ", users);
   let email = req.body.email;
   // console.log(email);
   let password = req.body.password;
-  // save hashed password into variable
-  const hashedPassword = bcrypt.hashSync(password, 10);
-
+  // need to find user object to access password
+  const hashPass = getUserObject(email, users).password;
+  console.log(hashPass);
   // if email or hashedpassword are empty strings
-  if (email === "" || hashedPassword === "") {
+  if (email === "" || password === "") {
     // send them 400 status code
     return res
       .status(400)
@@ -312,73 +327,13 @@ app.post("/login", (req, res) => {
   //   return res.status(403).send("Wrong password!");
   // }
   // passwordchecker not required as need to check hashed password to normal password using bcrypt, which returns boolean
-  bcrypt.compareSync(password, hashedPassword);
-
-  // let user id be retrieved
-  let userId = idFromEmail(email, users);
-  console.log(userId);
-  // set the user_id cookie with user's id and redirect
-  req.session.user_id = userId;
-
-  return res.redirect(`/urls/`);
+  if (bcrypt.compareSync(password, hashPass)) {
+    // let user id be retrieved
+    let userId = getUserByEmail(email, users);
+    // console.log(userId);
+    // set the user_id cookie with user's id and redirect
+    req.session.user_id = userId;
+    return res.redirect(`/urls/`);
+  }
+  return res.status(404).send("Incorrect information");
 });
-
-//HELPER FUNCTIONS
-
-// function to generate random 6 digit string
-function generateRandomString() {
-  // Math.random = random number between 0-1, toString to change numbers to random string + number, substring returns 6 characters
-  const result = Math.random().toString(20).substring(2, 8);
-  return result;
-}
-
-// function to check if a given email already exists
-const emailChecker = function (email, users) {
-  // loop through users in dtabse
-  for (const user in users) {
-    // if email exists in database
-    if (users[user].email === email) {
-      return true;
-    }
-  }
-  return false;
-};
-
-// // bcrypt will replace this function
-// // function to check if a given password already exists
-// const passwordChecker = function (password, users) {
-//   // loop through users in user object
-//   for (const user in users) {
-//     // if user's email === email
-//     if (users[user].password === password) {
-//       return true;
-//     }
-//   }
-//   return false;
-// };
-
-// function to retrieve id from email
-const idFromEmail = function (email, users) {
-  // loop through users in user object
-  for (const user in users) {
-    // if user's email === email
-    if (users[user].email === email) {
-      // return that user's password
-      return users[user].user_id;
-    }
-  }
-};
-
-// function to get short URLs for specific user
-const urlsForUser = function (id, urlDatabase) {
-  const userURLs = {};
-  // loop through URL database
-  for (const shortURL in urlDatabase) {
-    // if database user ID equals specific user
-    if (urlDatabase[shortURL].userID === id) {
-      // let key be the short URL and value be shortURL object data
-      userURLs[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURLs;
-};

@@ -31,7 +31,8 @@
       
       <tbody>
         <% if (!user_id) { %>
-          <h2>Please log in or register!</h2>
+          <h1>Welcome to TinyApp!</h1>
+          <h4>Please log in or register!</h4>
           <% } else { %>
 
         <% for(let url in urls) { %>
@@ -49,7 +50,7 @@
               </a>
             </td>
             <% } %>
-                <% } %>
+          <% } %>
           </tr>
       </tbody>
     </table>
