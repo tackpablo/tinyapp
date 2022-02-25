@@ -306,7 +306,7 @@ app.post("/login", (req, res) => {
   let password = req.body.password;
   // need to find user object to access password
   const hashPass = getUserObject(email, users).password;
-  console.log(hashPass);
+  // console.log(hashPass);
   // if email or hashedpassword are empty strings
   if (email === "" || password === "") {
     // send them 400 status code
